@@ -58,17 +58,12 @@ class Agent:
             "thigmotaxis": 0.5,  # tendency for agents to linger near walls [0 = not at all, 1 = max]
         }
         self.Environment = Environment
-        default_params.update(params)
+        default_params |= params
         self.params = default_params
         update_class_params(self, self.params)
 
         # initialise history dataframes
-        self.history = {}
-        self.history["t"] = []
-        self.history["pos"] = []
-        self.history["vel"] = []
-        self.history["rot_vel"] = []
-
+        self.history = {"t": [], "pos": [], "vel": [], "rot_vel": []}
         # time and runID
         self.t = 0
         self.distance_travelled = 0
@@ -91,11 +86,13 @@ class Agent:
         if self.Environment.dimensionality == "1D":
             self.pos = self.Environment.sample_positions(n=1, method="random")[0]
             self.velocity = np.array([self.speed_mean])
-            if self.Environment.boundary_conditions == "solid":
-                if self.speed_mean != 0:
-                    print(
-                        "Warning you have solid 1D boundary conditions and non-zero speed mean. "
-                    )
+            if (
+                self.Environment.boundary_conditions == "solid"
+                and self.speed_mean != 0
+            ):
+                print(
+                    "Warning you have solid 1D boundary conditions and non-zero speed mean. "
+                )
 
         if verbose is True:
             print(

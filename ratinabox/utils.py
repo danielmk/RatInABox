@@ -89,13 +89,13 @@ def vector_intercepts(vector_list_a, vector_list_b, return_collisions=False):
 
     intercepts = np.stack((l_a, l_b), axis=-1)
     if return_collisions == True:
-        direct_collision = (
+        return (
             (intercepts[:, :, 0] > 0)
             * (intercepts[:, :, 0] < 1)
             * (intercepts[:, :, 1] > 0)
             * (intercepts[:, :, 1] < 1)
         )
-        return direct_collision
+
     else:
         return intercepts
 
@@ -156,9 +156,7 @@ def shortest_vectors_from_points_to_lines(positions, vectors):
     )  # p_v_0.shape = (N_p,N_v,2)
     l_v = np.expand_dims(l_v, axis=-1)
 
-    perp = p_p - (p_v_0 + l_v * s_)  # perp.shape = (N_p,N_v,2)
-
-    return perp
+    return p_p - (p_v_0 + l_v * s_)
 
 
 def get_line_segments_between(pos1, pos2):
@@ -173,8 +171,7 @@ def get_line_segments_between(pos1, pos2):
     pos2_ = pos2.reshape(1, -1, pos2.shape[-1])
     pos1 = np.repeat(pos1_, pos2_.shape[1], axis=1)
     pos2 = np.repeat(pos2_, pos1_.shape[0], axis=0)
-    lines = np.stack((pos1, pos2), axis=-2)
-    return lines
+    return np.stack((pos1, pos2), axis=-2)
 
 
 def get_vectors_between(pos1=None, pos2=None, line_segments=None):
@@ -187,8 +184,7 @@ def get_vectors_between(pos1=None, pos2=None, line_segments=None):
             (N x M x dimensionality) array of vectors from pos1's to pos2's"""
     if line_segments is None:
         line_segments = get_line_segments_between(pos1, pos2)
-    vectors = line_segments[..., 0, :] - line_segments[..., 1, :]
-    return vectors
+    return line_segments[..., 0, :] - line_segments[..., 1, :]
 
 
 def get_distances_between(pos1=None, pos2=None, vectors=None):
@@ -201,8 +197,7 @@ def get_distances_between(pos1=None, pos2=None, vectors=None):
             (N x M) array of distances from pos1's to pos2's"""
     if vectors is None:
         vectors = get_vectors_between(pos1, pos2)
-    distances = np.linalg.norm(vectors, axis=-1)
-    return distances
+    return np.linalg.norm(vectors, axis=-1)
 
 
 def get_angle(segment):
@@ -233,8 +228,7 @@ def rotate(vector, theta):
         theta (flaot): the rotation angle
     """
     R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
-    vector_new = np.matmul(R, vector)
-    return vector_new
+    return np.matmul(R, vector)
 
 
 def wall_bounce(current_velocity, wall):
@@ -257,11 +251,9 @@ def wall_bounce(current_velocity, wall):
         wall_par / np.linalg.norm(wall_par),
         wall_perp / np.linalg.norm(wall_perp),
     )  # normalise
-    new_velocity = wall_par * np.dot(current_velocity, wall_par) - wall_perp * np.dot(
+    return wall_par * np.dot(current_velocity, wall_par) - wall_perp * np.dot(
         current_velocity, wall_perp
     )
-
-    return new_velocity
 
 
 def pi_domain(x):
@@ -299,8 +291,9 @@ def ornstein_uhlenbeck(dt, x, drift=0.0, noise_scale=0.2, coherence_time=5.0):
     coherence_time = coherence_time * np.ones_like(x)
     sigma = np.sqrt((2 * noise_scale ** 2) / (coherence_time * dt))
     theta = 1 / coherence_time
-    dx = theta * (drift - x) * dt + sigma * np.random.normal(size=x.shape, scale=dt)
-    return dx
+    return theta * (drift - x) * dt + sigma * np.random.normal(
+        size=x.shape, scale=dt
+    )
 
 
 def interpolate_and_smooth(x, y, sigma=None):
@@ -317,13 +310,12 @@ def interpolate_and_smooth(x, y, sigma=None):
     y_cubic = interp1d(x, y, kind="cubic")
     x_new = np.arange(x[0], x[-1], (x[1] - x[0]) / 10)
     y_interpolated = y_cubic(x_new)
-    if sigma is not None:
-        y_smoothed = gaussian_filter1d(
-            y_interpolated, sigma=sigma / (x_new[1] - x_new[0])
-        )
-        return x_new, y_smoothed
-    else:
+    if sigma is None:
         return x_new, y_interpolated
+    y_smoothed = gaussian_filter1d(
+        y_interpolated, sigma=sigma / (x_new[1] - x_new[0])
+    )
+    return x_new, y_smoothed
 
 
 def normal_to_rayleigh(x, sigma=1):
@@ -506,7 +498,7 @@ def activate(x, activation="sigmoid", deriv=False, other_args={}):
         # mid_x = middle point on domain = 1
         # width_x = distance from 5percent_x to 95percent_x = 1
         other_args_default = {"max_fr": 1, "min_fr": 0, "mid_x": 1, "width_x": 2}
-        other_args_default.update(other_args)
+        other_args_default |= other_args
         other_args = other_args_default
         max_fr, min_fr, width_x, mid_x = (
             other_args["max_fr"],

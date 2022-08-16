@@ -53,7 +53,7 @@ class Environment:
             "dx": 0.01,  # discretises the environment (for plotting purposes only)
         }
 
-        default_params.update(params)
+        default_params |= params
         self.params = default_params
         update_class_params(self, self.params)
 
@@ -309,9 +309,7 @@ class Environment:
                     len(walls) <= 5
                 ), "unfortunately geodesic geomtry is only defined in closed rooms with one additional wall (efficient geometry calculations withh more than 1 wall are super hard I have discovered!) "
                 distances = get_distances_between(vectors=vectors)
-                if len(walls) == 4:
-                    pass
-                else:
+                if len(walls) != 4:
                     wall = walls[4]
                     via_wall_distances = []
                     for part_of_wall in wall:
@@ -355,21 +353,15 @@ class Environment:
             bool: True if pos is inside environment.
         """
         pos = np.array(pos).reshape(-1)
-        if self.dimensionality == "2D":
-            if (
-                (pos[0] > self.extent[0])
-                and (pos[0] < self.extent[1])
-                and (pos[1] > self.extent[2])
-                and (pos[1] < self.extent[3])
-            ):
-                return True
-            else:
-                return False
-        elif self.dimensionality == "1D":
-            if (pos[0] > self.extent[0]) and (pos[0] < self.extent[1]):
-                return True
-            else:
-                return False
+        if self.dimensionality == "1D":
+            return pos[0] > self.extent[0] and pos[0] < self.extent[1]
+        elif self.dimensionality == "2D":
+            return (
+                pos[0] > self.extent[0]
+                and pos[0] < self.extent[1]
+                and pos[1] > self.extent[2]
+                and pos[1] < self.extent[3]
+            )
 
     def check_wall_collisions(self, proposed_step):
         """Given proposed step [current_pos, next_pos] it returns two lists 
@@ -387,12 +379,11 @@ class Environment:
             if (self.walls is None) or (len(self.walls) == 0):
                 # no walls to collide with
                 return (None, None)
-            elif self.walls is not None:
-                walls = self.walls
-                wall_collisions = vector_intercepts(
-                    walls, proposed_step, return_collisions=True
-                ).reshape(-1)
-                return (walls, wall_collisions)
+            walls = self.walls
+            wall_collisions = vector_intercepts(
+                walls, proposed_step, return_collisions=True
+            ).reshape(-1)
+            return (walls, wall_collisions)
 
     def vectors_from_walls(self, pos):
         """Given a position, pos, it returns a list of the vectors of shortest distance from all the walls to current_pos #shape=(N_walls,2)
@@ -401,8 +392,7 @@ class Environment:
         Returns:
             vector array: np.array(shape=(N_walls,2))
         """
-        walls_to_pos_vectors = shortest_vectors_from_points_to_lines(pos, self.walls)[0]
-        return walls_to_pos_vectors
+        return shortest_vectors_from_points_to_lines(pos, self.walls)[0]
 
     def apply_boundary_conditions(self, pos):
         """Performs a boundary condition check. If pos is OUTside the environment and the boundary conditions are solid then a different position, safely located 1cm within the environmnt, is returne3d. If pos is OUTside the environment but boundary conditions are periodic its position is looped to the other side of the environment appropriately.

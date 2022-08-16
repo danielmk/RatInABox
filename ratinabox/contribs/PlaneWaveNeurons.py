@@ -34,7 +34,7 @@ class PlaneWaveNeurons(Neurons):
             "name": "PlaneWaveNeurons",
         }
         self.Agent = Agent
-        default_params.update(params)
+        default_params |= params
         self.params = default_params
         super().__init__(Agent, self.params)
 

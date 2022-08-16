@@ -31,7 +31,7 @@ class ValueNeuron(FeedForwardLayer):
             "eta": 0.001,  # learning rate
         }
 
-        default_params.update(params)
+        default_params |= params
         self.params = default_params
         self.params["activation_params"] = {
             "activation": "linear"
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     Reward.plot_place_cell_locations(fig=fig, ax=ax[0])
     VN.plot_rate_map(fig=fig, ax=ax[1])
 
-    #explore/learn for 300 seconds 
-    for i in tqdm(range(int(300 / Ag.dt))):
+    #explore/learn for 300 seconds
+    for _ in tqdm(range(int(300 / Ag.dt))):
         Ag.update()
         Reward.update()
         PCs.update()

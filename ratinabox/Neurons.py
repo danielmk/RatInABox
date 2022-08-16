@@ -88,16 +88,12 @@ class Neurons:
             "color": None,  # just for plotting
         }
         self.Agent = Agent
-        default_params.update(params)
+        default_params |= params
         self.params = default_params
         update_class_params(self, self.params)
 
         self.firingrate = np.zeros(self.n)
-        self.history = {}
-        self.history["t"] = []
-        self.history["firingrate"] = []
-        self.history["spikes"] = []
-
+        self.history = {"t": [], "firingrate": [], "spikes": []}
         if verbose is True:
             print(
                 f"\nA Neurons() class has been initialised with parameters f{self.params}. Use Neurons.update() to update the firing rate of the Neurons to correspond with the Agent.Firing rates and spikes are saved into the Agent.history dictionary. Plot a timeseries of the rate using Neurons.plot_rate_timeseries(). Plot a rate map of the Neurons using Neurons.plot_rate_map()."
